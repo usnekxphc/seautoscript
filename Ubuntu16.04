@@ -1,0 +1,641 @@
+#!/bin/bash
+
+echo "#deb cdrom:[Ubuntu 16.04.2 LTS _Xenial Xerus_ - Release amd64 (20170215.2)]/ xenial main restricted
+
+# See http://help.ubuntu.com/community/UpgradeNotes for how to upgrade to
+# newer versions of the distribution.
+deb http://us.archive.ubuntu.com/ubuntu/ xenial main restricted
+# deb-src http://us.archive.ubuntu.com/ubuntu/ xenial main restricted
+
+## Major bug fix updates produced after the final release of the
+## distribution.
+deb http://us.archive.ubuntu.com/ubuntu/ xenial-updates main restricted
+# deb-src http://us.archive.ubuntu.com/ubuntu/ xenial-updates main restricted
+
+## N.B. software from this repository is ENTIRELY UNSUPPORTED by the Ubuntu
+## team. Also, please note that software in universe WILL NOT receive any
+## review or updates from the Ubuntu security team.
+deb http://us.archive.ubuntu.com/ubuntu/ xenial universe
+# deb-src http://us.archive.ubuntu.com/ubuntu/ xenial universe
+deb http://us.archive.ubuntu.com/ubuntu/ xenial-updates universe
+# deb-src http://us.archive.ubuntu.com/ubuntu/ xenial-updates universe
+
+## N.B. software from this repository is ENTIRELY UNSUPPORTED by the Ubuntu 
+## team, and may not be under a free licence. Please satisfy yourself as to 
+## your rights to use the software. Also, please note that software in 
+## multiverse WILL NOT receive any review or updates from the Ubuntu
+## security team.
+deb http://us.archive.ubuntu.com/ubuntu/ xenial multiverse
+# deb-src http://us.archive.ubuntu.com/ubuntu/ xenial multiverse
+deb http://us.archive.ubuntu.com/ubuntu/ xenial-updates multiverse
+# deb-src http://us.archive.ubuntu.com/ubuntu/ xenial-updates multiverse
+
+## N.B. software from this repository may not have been tested as
+## extensively as that contained in the main release, although it includes
+## newer versions of some applications which may provide useful features.
+## Also, please note that software in backports WILL NOT receive any review
+## or updates from the Ubuntu security team.
+deb http://us.archive.ubuntu.com/ubuntu/ xenial-backports main restricted universe multiverse
+# deb-src http://us.archive.ubuntu.com/ubuntu/ xenial-backports main restricted universe multiverse
+
+## Uncomment the following two lines to add software from Canonical's
+## 'partner' repository.
+## This software is not part of Ubuntu, but is offered by Canonical and the
+## respective vendors as a service to Ubuntu users.
+# deb http://archive.canonical.com/ubuntu xenial partner
+# deb-src http://archive.canonical.com/ubuntu xenial partner
+
+deb http://security.ubuntu.com/ubuntu xenial-security main restricted
+# deb-src http://security.ubuntu.com/ubuntu xenial-security main restricted
+deb http://security.ubuntu.com/ubuntu xenial-security universe
+# deb-src http://security.ubuntu.com/ubuntu xenial-security universe
+deb http://security.ubuntu.com/ubuntu xenial-security multiverse
+# deb-src http://security.ubuntu.com/ubuntu xenial-security multiverse" > /etc/apt/sources.list 
+
+clear
+
+echo -e "\e[39m                                                                 "
+echo -e "\e[39m                                                                 "
+echo -e "\e[34m _|    _|    _|_|_|  _|      _|  _|_|_|_|  _|    _|  _|      _|  "
+echo -e "\e[34m _|    _|  _|        _|_|    _|  _|        _|  _|      _|  _|    "
+echo -e "\e[34m _|    _|    _|_|    _|  _|  _|  _|_|_|    _|_|          _|      "
+echo -e "\e[34m _|    _|        _|  _|    _|_|  _|        _|  _|      _|  _|    "
+echo -e "\e[34m   _|_|    _|_|_|    _|      _|  _|_|_|_|  _|    _|  _|      _|  "
+echo -e "\e[34m                                                                 "
+echo -e "\e[34m                        AUTO SCRIPT                              "
+echo -e "\e[39m                                                                 "
+echo -e "\e[39m                                                                 "
+echo ""
+echo "Note:"
+echo ""
+echo "If your VPS provider have a firewall, configure it first then choose the SNAT setup."
+echo "If you're using DIGITAL OCEAN or VULTR, you can safetly use the LBC setup."
+echo " "
+echo "What Softether setup do you prefer?"
+
+read -p "LBC or SNAT: " RESP
+if [ "$RESP" = "LBC" ]; then
+
+HOST=$(hostname  -I | cut -f1 -d' ')
+HUB=""
+USERNAME=""
+PASSWORD=""
+SEPASSWORD=""
+
+echo ""
+echo "LBC INSTALLATION"
+echo ""
+
+read -e -p "Set Virtual Hub: " -i "Usnekx" HUB
+read -e -p "Set Username: " -i "Usnekx" USERNAME
+
+read -e -p "Do you want to add user password? (y/n) " -i "n" RESP
+if [ "$RESP" = "y" ]; then
+
+echo -n "Set Password: "
+read PASSWORD
+
+echo "Standard Password Authentication"
+
+read -e -p "Set Server Password: " -i "!PASSWORD!" SEPASSWORD
+
+echo ""
+echo "Now chill and relax until the installation finished."
+echo ""
+
+sleep 1
+	
+echo ""
+
+apt-get -y update && apt-get -y upgrade
+apt-get -y install checkinstall build-essential expect toilet
+
+sleep 1
+echo "SOFTETHER INSTALLATION"
+
+wget http://www.softether-download.com/files/softether/v4.27-9666-beta-2018.04.21-tree/Linux/SoftEther_VPN_Server/64bit_-_Intel_x64_or_AMD64/softether-vpnserver-v4.27-9666-beta-2018.04.21-linux-x64-64bit.tar.gz
+tar -xzf softether-vpnserver-v4.27-9666-beta-2018.04.21-linux-x64-64bit.tar.gz
+rm -rf softether-vpnserver-v4.27-9666-beta-2018.04.21-linux-x64-64bit.tar.gz
+cd /root/vpnserver && expect -c 'spawn make; expect number:; send 1\r; expect number:; send 1\r; expect number:; send 1\r; interact'
+
+sleep 1
+echo "SOFTETHER CONFIGURATION"
+
+cd
+mv vpnserver/ /usr/local
+chmod 600 * /usr/local/vpnserver/
+chmod 700 /usr/local/vpnserver/vpncmd
+chmod 700 /usr/local/vpnserver/vpnserver
+
+echo '#!/bin/sh
+# description: SoftEther VPN Server
+### BEGIN INIT INFO
+# Provides:          vpnserver
+# Required-Start:    $local_fs $network
+# Required-Stop:     $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: softether vpnserver
+# Description:       softether vpnserver daemon
+### END INIT INFO
+DAEMON=/usr/local/vpnserver/vpnserver
+LOCK=/var/lock/subsys/vpnserver
+TAP_ADDR=10.20.30.1
+test -x $DAEMON || exit 0
+case "$1" in
+start)
+$DAEMON start
+touch $LOCK
+sleep 1
+/sbin/ifconfig tap_usnekx $TAP_ADDR
+;;
+stop)
+$DAEMON stop
+rm $LOCK
+;;
+restart)
+$DAEMON stop
+sleep 3
+$DAEMON start
+sleep 1
+/sbin/ifconfig tap_usnekx $TAP_ADDR
+;;
+*)
+echo "Usage: $0 {start|stop|restart}"
+exit 1
+esac' > /etc/init.d/vpnserver
+
+sleep 1
+echo "SOFTETHER START"
+
+chmod 755 /etc/init.d/vpnserver
+/etc/init.d/vpnserver start
+update-rc.d vpnserver defaults
+
+sleep 1
+echo "ENABLE IPV4 FORWARD"
+
+echo 'net.ipv4.ip_forward = 1' > /etc/sysctl.d/ipv4_forwarding.conf
+sysctl --system
+
+sleep 1
+echo "DNSMASQ CONFIGURATION"
+
+apt-get -y install dnsmasq
+
+echo "interface=tap_usnekx
+dhcp-range=tap_usnekx,10.20.30.10,10.20.30.50,255.255.255.0,12h
+dhcp-option=tap_usnekx,3,10.20.30.1
+dhcp-option=option:dns-server,1.1.1.1,1.0.0.1" > /etc/dnsmasq.conf
+
+sleep 1
+echo "RESTART #1"
+
+/etc/init.d/dnsmasq restart && /etc/init.d/vpnserver restart
+
+sleep 1
+echo "SE SERVER CONFIGURATION"
+
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /CMD ServerPasswordSet ${SEPASSWORD}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD HubDelete DEFAULT
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD HubCreate ${HUB} /PASSWORD:${SEPASSWORD}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /HUB:${HUB} /CMD UserCreate ${USERNAME} /GROUP:none /REALNAME:none /NOTE:none
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /HUB:${HUB} /CMD UserPasswordSet ${USERNAME} /PASSWORD:${PASSWORD}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD IPsecEnable /L2TP:yes /L2TPRAW:no /ETHERIP:no /PSK:vpn /DEFAULTHUB:${HUB}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD VpnOverIcmpDnsEnable /ICMP:no /DNS:yes
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD BridgeCreate ${HUB} /DEVICE:usnekx /TAP:yes
+
+sleep 1
+echo "RESTART #2"
+
+/etc/init.d/dnsmasq restart && /etc/init.d/vpnserver restart
+rm -r *
+# ALL DONE!
+clear
+toilet -f mono12 -F metal USNEKX
+echo "  Softether LBC server configuration has been done!"
+echo ""
+echo "	Host: $HOST"
+echo "	Port: 443"
+echo "	Hub: $HUB"
+echo "	Username: $USERNAME"
+echo "	Password: $PASSWORD"
+echo "	Standard Password Authentication"
+echo ""
+echo "	Server Password: $SEPASSWORD"
+echo ""
+echo "  Wait 2-5 minutes before connecting."
+echo ""
+
+# IPTABLES CONFIGURATION
+
+iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -s 10.20.30.0/24 -j ACCEPT
+iptables -A FORWARD -j REJECT
+iptables -t nat -A POSTROUTING -s 10.20.30.0/24 -j SNAT --to-source ${HOST}
+iptables -t nat -A POSTROUTING -s 10.20.30.0/24 -j SNAT --to-source ${HOST}
+iptables -t nat -A POSTROUTING -j MASQUERADE
+
+else
+echo "Anonymous Authentication"
+read -e -p "Set Server Password: " -i "!PASSWORD!" SEPASSWORD
+
+echo ""
+echo "Now chill and relax until the installation finished."
+echo ""
+
+sleep 1
+echo "UPDATE & UPGRADES"
+echo ""
+
+apt-get -y update && apt-get -y upgrade
+apt-get -y install checkinstall build-essential expect toilet
+
+sleep 1
+echo "SOFTETHER INSTALLATION"
+
+wget http://www.softether-download.com/files/softether/v4.27-9666-beta-2018.04.21-tree/Linux/SoftEther_VPN_Server/64bit_-_Intel_x64_or_AMD64/softether-vpnserver-v4.27-9666-beta-2018.04.21-linux-x64-64bit.tar.gz
+tar -xzf softether-vpnserver-v4.27-9666-beta-2018.04.21-linux-x64-64bit.tar.gz
+rm -rf softether-vpnserver-v4.27-9666-beta-2018.04.21-linux-x64-64bit.tar.gz
+cd /root/vpnserver && expect -c 'spawn make; expect number:; send 1\r; expect number:; send 1\r; expect number:; send 1\r; interact'
+
+sleep 1
+echo "SOFTETHER CONFIGURATION"
+
+cd
+mv vpnserver/ /usr/local
+chmod 600 * /usr/local/vpnserver/
+chmod 700 /usr/local/vpnserver/vpncmd
+chmod 700 /usr/local/vpnserver/vpnserver
+
+echo '#!/bin/sh
+# description: SoftEther VPN Server
+### BEGIN INIT INFO
+# Provides:          vpnserver
+# Required-Start:    $local_fs $network
+# Required-Stop:     $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: softether vpnserver
+# Description:       softether vpnserver daemon
+### END INIT INFO
+DAEMON=/usr/local/vpnserver/vpnserver
+LOCK=/var/lock/subsys/vpnserver
+TAP_ADDR=10.20.30.1
+test -x $DAEMON || exit 0
+case "$1" in
+start)
+$DAEMON start
+touch $LOCK
+sleep 1
+/sbin/ifconfig tap_usnekx $TAP_ADDR
+;;
+stop)
+$DAEMON stop
+rm $LOCK
+;;
+restart)
+$DAEMON stop
+sleep 3
+$DAEMON start
+sleep 1
+/sbin/ifconfig tap_usnekx $TAP_ADDR
+;;
+*)
+echo "Usage: $0 {start|stop|restart}"
+exit 1
+esac' > /etc/init.d/vpnserver
+
+sleep 1
+echo "SOFTETHER START"
+
+chmod 755 /etc/init.d/vpnserver
+/etc/init.d/vpnserver start
+update-rc.d vpnserver defaults
+
+sleep 1
+echo "ENABLE IPV4 FORWARD"
+
+echo 'net.ipv4.ip_forward = 1' > /etc/sysctl.d/ipv4_forwarding.conf
+sysctl --system
+
+sleep 1
+echo "DNSMASQ CONFIGURATION"
+
+apt-get -y install dnsmasq
+
+echo "interface=tap_usnekx
+dhcp-range=tap_usnekx,10.20.30.10,10.20.30.50,255.255.255.0,12h
+dhcp-option=tap_usnekx,3,10.20.30.1
+dhcp-option=option:dns-server,1.1.1.1,1.0.0.1" > /etc/dnsmasq.conf
+
+sleep 1
+echo "RESTART #1"
+
+/etc/init.d/dnsmasq restart && /etc/init.d/vpnserver restart
+
+sleep 1
+echo "SE SERVER CONFIGURATION"
+
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /CMD ServerPasswordSet ${SEPASSWORD}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD HubDelete DEFAULT
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD HubCreate ${HUB} /PASSWORD:${SEPASSWORD}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /HUB:${HUB} /CMD UserCreate ${USERNAME} /GROUP:none /REALNAME:none /NOTE:none
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /HUB:${HUB} /CMD UserAnonymousSet ${USERNAME}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD IPsecEnable /L2TP:yes /L2TPRAW:no /ETHERIP:no /PSK:vpn /DEFAULTHUB:${HUB}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD VpnOverIcmpDnsEnable /ICMP:no /DNS:yes
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD BridgeCreate ${HUB} /DEVICE:usnekx /TAP:yes
+
+sleep 1
+echo "RESTART #2"
+
+/etc/init.d/dnsmasq restart && /etc/init.d/vpnserver restart
+rm -r *
+# ALL DONE!
+clear
+toilet -f mono12 -F metal USNEKX
+echo "  Softether LBC server configuration has been done!"
+echo ""
+echo "	Host: $HOST"
+echo "	Port: 443"
+echo "	Hub: $HUB"
+echo "	Username: $USERNAME"
+echo "	Anonymous Authentication"
+echo ""
+echo "	Server Password: $SEPASSWORD"
+echo ""
+echo "  Wait 2-5 minutes before connecting."
+echo ""
+
+# IPTABLES CONFIGURATION
+
+iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -s 10.20.30.0/24 -j ACCEPT
+iptables -A FORWARD -j REJECT
+iptables -t nat -A POSTROUTING -s 10.20.30.0/24 -j SNAT --to-source ${HOST}
+iptables -t nat -A POSTROUTING -j MASQUERADE
+	
+fi
+	
+else
+
+HOST=$(hostname  -I | cut -f1 -d' ')
+HUB=""
+USERNAME=""
+PASSWORD=""
+SEPASSWORD=""
+
+echo ""
+echo "SNAT INSTALLATION"
+echo ""
+
+read -e -p "Set Virtual Hub: " -i "Usnekx" HUB
+read -e -p "Set Username: " -i "Usnekx" USERNAME
+
+read -e -p "Do you want to add user password? (y/n) " -i "n" RESP
+if [ "$RESP" = "y" ]; then
+
+echo -n "Set Password: "
+read PASSWORD
+
+echo "Standard Password Authentication"
+
+read -e -p "Set Server Password: " -i "!PASSWORD!" SEPASSWORD
+
+echo ""
+echo "Now chill and relax until the installation finished."
+echo ""
+
+sleep 1
+echo "UPDATE & UPGRADES"
+echo ""
+
+apt-get -y update && apt-get -y upgrade
+apt-get -y install checkinstall build-essential expect toilet
+
+sleep 1
+echo "SOFTETHER INSTALLATION"
+
+wget https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/releases/download/v4.31-9727-beta/softether-vpnserver-v4.31-9727-beta-2019.11.18-linux-x64-64bit.tar.gz
+tar -xzf softether-vpnserver-v4.31-9727-beta-2019.11.18-linux-x64-64bit.tar.gz
+rm -rf softether-vpnserver-v4.31-9727-beta-2019.11.18-linux-x64-64bit.tar.gz
+cd /root/vpnserver && expect -c 'spawn make; expect number:; send 1\r; expect number:; send 1\r; expect number:; send 1\r; interact' && cd
+
+mv vpnserver/ /usr/local
+chmod 600 * /usr/local/vpnserver/
+chmod 700 /usr/local/vpnserver/vpncmd
+chmod 700 /usr/local/vpnserver/vpnserver
+
+echo '#!/bin/sh
+# description: SoftEther VPN Server
+### BEGIN INIT INFO
+# Provides:          vpnserver
+# Required-Start:    $local_fs $network
+# Required-Stop:     $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: softether vpnserver
+# Description:       softether vpnserver daemon
+### END INIT INFO
+DAEMON=/usr/local/vpnserver/vpnserver
+LOCK=/var/lock/subsys/vpnserver
+test -x $DAEMON || exit 0
+case "$1" in
+start)
+$DAEMON start
+touch $LOCK
+;;
+stop)
+$DAEMON stop
+rm $LOCK
+;;
+restart)
+$DAEMON stop
+sleep 3
+$DAEMON start
+;;
+*)
+echo "Usage: $0 {start|stop|restart}"
+exit 1
+esac
+exit 0' > /etc/init.d/vpnserver
+
+sleep 1
+echo "SOFTETHER START"
+
+chmod 755 /etc/init.d/vpnserver
+/etc/init.d/vpnserver start
+update-rc.d vpnserver defaults
+
+sleep 1
+echo "ENABLE IPV4 FORWARD"
+
+echo 'net.ipv4.ip_forward = 1' > /etc/sysctl.d/ipv4_forwarding.conf
+sysctl --system
+
+sleep 1
+echo "SE SERVER CONFIGURATION"
+
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /CMD ServerPasswordSet ${SEPASSWORD}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD HubDelete DEFAULT
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD HubCreate ${HUB} /PASSWORD:${SEPASSWORD}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /HUB:${HUB} /CMD UserCreate ${USERNAME} /GROUP:none /REALNAME:none /NOTE:none
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /HUB:${HUB} /CMD UserPasswordSet ${USERNAME} /PASSWORD:${PASSWORD}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /HUB:${HUB} /CMD SecureNatEnable
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD IPsecEnable /L2TP:yes /L2TPRAW:no /ETHERIP:no /PSK:vpn /DEFAULTHUB:${HUB}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD VpnOverIcmpDnsEnable /ICMP:no /DNS:yes
+rm -r *
+# ALL DONE!
+clear
+toilet -f mono12 -F metal USNEKX
+echo "  Softether SNAT server configuration has been done!"
+echo ""
+echo "	Host: $HOST"
+echo "	Port: 443"
+echo "	Hub: $HUB"
+echo "	Username: $USERNAME"
+echo "	Password: $PASSWORD"
+echo "	Standard Password Authentication"
+echo ""
+echo "	Server Password: $SEPASSWORD"
+echo ""
+echo "  You can now connect without any error."
+echo ""
+
+# IPTABLES CONFIGURATION
+
+sudo iptables -P INPUT ACCEPT
+sudo iptables -P FORWARD ACCEPT
+sudo iptables -P OUTPUT ACCEPT
+sudo iptables -t nat -F
+sudo iptables -t mangle -F
+sudo iptables -F
+sudo iptables -X
+iptables -t nat -A PREROUTING -p udp --jump DNAT --to-destination ${HOST}:53
+iptables -t nat -A POSTROUTING -j MASQUERADE
+
+else
+echo "Anonymous Authentication"
+read -e -p "Set Server Password: " -i "!PASSWORD!" SEPASSWORD
+
+echo ""
+echo "Now chill and relax until the installation finished."
+echo ""
+
+sleep 1
+echo "UPDATE & UPGRADES"
+echo ""
+
+apt-get -y update && apt-get -y upgrade
+apt-get -y install checkinstall build-essential expect toilet
+
+sleep 1
+echo "SOFTETHER INSTALLATION"
+
+wget https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/releases/download/v4.31-9727-beta/softether-vpnserver-v4.31-9727-beta-2019.11.18-linux-x64-64bit.tar.gz
+tar -xzf softether-vpnserver-v4.31-9727-beta-2019.11.18-linux-x64-64bit.tar.gz
+rm -rf softether-vpnserver-v4.31-9727-beta-2019.11.18-linux-x64-64bit.tar.gz
+cd /root/vpnserver && expect -c 'spawn make; expect number:; send 1\r; expect number:; send 1\r; expect number:; send 1\r; interact'
+
+sleep 1
+echo "SOFTETHER CONFIGURATION"
+
+cd
+mv vpnserver/ /usr/local
+chmod 600 * /usr/local/vpnserver/
+chmod 700 /usr/local/vpnserver/vpncmd
+chmod 700 /usr/local/vpnserver/vpnserver
+
+echo '#!/bin/sh
+# description: SoftEther VPN Server
+### BEGIN INIT INFO
+# Provides:          vpnserver
+# Required-Start:    $local_fs $network
+# Required-Stop:     $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: softether vpnserver
+# Description:       softether vpnserver daemon
+### END INIT INFO
+DAEMON=/usr/local/vpnserver/vpnserver
+LOCK=/var/lock/subsys/vpnserver
+test -x $DAEMON || exit 0
+case "$1" in
+start)
+$DAEMON start
+touch $LOCK
+;;
+stop)
+$DAEMON stop
+rm $LOCK
+;;
+restart)
+$DAEMON stop
+sleep 3
+$DAEMON start
+;;
+*)
+echo "Usage: $0 {start|stop|restart}"
+exit 1
+esac
+exit 0' > /etc/init.d/vpnserver
+
+sleep 1
+echo "SOFTETHER START"
+
+chmod 755 /etc/init.d/vpnserver
+/etc/init.d/vpnserver start
+update-rc.d vpnserver defaults
+
+sleep 1
+echo "ENABLE IPV4 FORWARD"
+
+echo 'net.ipv4.ip_forward = 1' > /etc/sysctl.d/ipv4_forwarding.conf
+sysctl --system
+
+sleep 1
+echo "SE SERVER CONFIGURATION"
+
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /CMD ServerPasswordSet ${SEPASSWORD}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD HubDelete DEFAULT
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD HubCreate ${HUB} /PASSWORD:${SEPASSWORD}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /HUB:${HUB} /CMD UserCreate ${USERNAME} /GROUP:none /REALNAME:none /NOTE:none
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /HUB:${HUB} /CMD UserAnonymousSet ${USERNAME}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /HUB:${HUB} /CMD SecureNatEnable
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD IPsecEnable /L2TP:yes /L2TPRAW:no /ETHERIP:no /PSK:vpn /DEFAULTHUB:${HUB}
+sudo /usr/local/vpnserver/vpncmd localhost /SERVER /PASSWORD:${SEPASSWORD} /CMD VpnOverIcmpDnsEnable /ICMP:no /DNS:yes
+rm -r *
+
+# ALL DONE!
+clear
+toilet -f mono12 -F metal USNEKX
+echo "  Softether SNAT server configuration has been done!"
+echo ""
+echo "	Host: $HOST"
+echo "	Port: 443"
+echo "	Hub: $HUB"
+echo "	Username: $USERNAME"
+echo "	Anonymous Authentication"
+echo ""
+echo "	Server Password: $SEPASSWORD"
+echo ""
+echo "  You can now connect without any error"
+echo ""
+
+# IPTABLES CONFIGURATION
+
+sudo iptables -P INPUT ACCEPT
+sudo iptables -P FORWARD ACCEPT
+sudo iptables -P OUTPUT ACCEPT
+sudo iptables -t nat -F
+sudo iptables -t mangle -F
+sudo iptables -F
+sudo iptables -X
+iptables -t nat -A PREROUTING -p udp --jump DNAT --to-destination ${HOST}:53
+iptables -t nat -A POSTROUTING -j MASQUERADE
+	
+fi
+
+fi
+
+kill -9 $PPID
